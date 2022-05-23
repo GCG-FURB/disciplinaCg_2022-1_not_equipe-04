@@ -35,9 +35,9 @@ namespace gcgcg
     int mouseX, mouseY;   //TODO: achar método MouseDown para não ter variável Global
     private bool mouseMoverPto = false;
     private Retangulo obj_Retangulo;
-    public static Ponto4D pontoCentral = new Ponto4D(0, 0);
-    public static Cor corRetangulo = new Cor(178, 0, 255);
-    public static bool pontoSelecionado = false;
+    private Ponto4D coordenadas = new Ponto4D(0, 0);
+    private Cor corRetangulo = new Cor(178, 0, 255);
+    private bool movendo = false;
 
 #if CG_Privado
     private Privado_SegReta obj_SegReta;
@@ -104,23 +104,25 @@ namespace gcgcg
       retangulo.ObjetoCor = corRetangulo;
       objetosLista.Add(retangulo);
 
-      Ponto pontoCentral = new Ponto(Utilitario.charProximo(objetoId), null, Mundo.pontoCentral);
+      Ponto pontoCentral = new Ponto(Utilitario.charProximo(objetoId), null, coordenadas);
       objetosLista.Add(pontoCentral);
 
       Circulo circuloMaior = new Circulo(Utilitario.charProximo(objetoId), null, 300, 720, new Ponto4D(0, 0));
       objetosLista.Add(circuloMaior);
 
-      Circulo circuloMenor = new Circulo(Utilitario.charProximo(objetoId), null, 100, 72, Mundo.pontoCentral);
+      Circulo circuloMenor = new Circulo(Utilitario.charProximo(objetoId), null, 100, 72, coordenadas);
       objetosLista.Add(circuloMenor);
     }
 
-    //TODO: não está considerando o NDC
     protected override void OnMouseMove(MouseMoveEventArgs e)
     {
-      if (!e.Mouse.IsButtonDown(MouseButton.Left) || !pontoSelecionado)
+      objetosLista.Clear();
+      DesenharBbox();
+
+      if (!e.Mouse.IsButtonDown(MouseButton.Left) || !movendo)
       {
-        pontoCentral.X = 0;
-        pontoCentral.Y = 0;
+        coordenadas.X = 0;
+        coordenadas.Y = 0;
 
         return;
       }
@@ -130,8 +132,8 @@ namespace gcgcg
 
       if (Matematica.GerarPtosCirculo(315, 300).X > xPos && Matematica.GerarPtosCirculo(315, 300).Y < yPos && Matematica.GerarPtosCirculo(135, 300).X < xPos && Matematica.GerarPtosCirculo(135, 300).Y > yPos)
       {
-        pontoCentral.X = xPos;
-        pontoCentral.Y = yPos;
+        coordenadas.X = xPos;
+        coordenadas.Y = yPos;
 
         corRetangulo.CorR = 178;
         corRetangulo.CorG = 0;
@@ -148,15 +150,23 @@ namespace gcgcg
 
         if (distancia < raioQuadrado)
         {
-          pontoCentral.X = xPos;
-          pontoCentral.Y = yPos;
+          coordenadas.X = xPos;
+          coordenadas.Y = yPos;
+        }
+        else
+        {
+          corRetangulo.CorR = 0;
+          corRetangulo.CorG = 0;
+          corRetangulo.CorB = 255;
         }
       }
+
+      base.OnMouseMove(e);
     }
 
     protected override void OnMouseUp(MouseButtonEventArgs e)
     {
-      pontoSelecionado = false;
+      movendo = false;
       base.OnMouseUp(e);
     }
 
@@ -167,11 +177,11 @@ namespace gcgcg
         int xPos = (e.X - 300) * 2;
         int yPos = (e.Y - 300) * -2;
 
-        pontoSelecionado = false;
+        movendo = false;
 
-        if (xPos > (pontoCentral.X - 50) && xPos < (pontoCentral.X + 50) && yPos < (pontoCentral.Y + 50) && yPos > (pontoCentral.Y - 50))
+        if (xPos > (coordenadas.X - 100) && xPos < (coordenadas.X + 100) && yPos < (coordenadas.Y + 100) && yPos > (coordenadas.Y - 100))
         {
-          pontoSelecionado = true;
+          movendo = true;
         }
       }
 
