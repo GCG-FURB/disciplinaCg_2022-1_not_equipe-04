@@ -90,7 +90,7 @@ namespace gcgcg
       GL.Clear(ClearBufferMask.ColorBufferBit);
       GL.MatrixMode(MatrixMode.Modelview);
       GL.LoadIdentity();
-      
+
       for (var i = 0; i < objetosLista.Count; i++)
         objetosLista[i].Desenhar();
       if (bBoxDesenhar && (objetoSelecionado != null))
@@ -141,6 +141,17 @@ namespace gcgcg
           objetoSelecionado.ObjetoCor.CorB = 255;
         }
         break;
+
+        case Key.C:
+        {
+          objetosLista.Remove(objetoSelecionado);
+          objetoSelecionado = null;
+        }
+        break;
+
+        case Key.S:
+          objetoSelecionado.PrimitivaTipo = objetoSelecionado.PrimitivaTipo == PrimitiveType.LineLoop ? PrimitiveType.LineStrip : PrimitiveType.LineLoop;
+          break;
       }
       
       base.OnKeyDown(e);
