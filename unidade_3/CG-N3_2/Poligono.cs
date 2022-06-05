@@ -39,7 +39,10 @@ namespace gcgcg
         public void FinalizarPrevisao()
         {
             if (emPrevisao)
+            {
                 PontosRemoverUltimo();
+                emPrevisao = false;
+            }
         }
         
         public void FinalizarPrevisao(int indice)
@@ -61,6 +64,11 @@ namespace gcgcg
         {
             PontosAlterar(ponto, indice);
         }
+
+        public int IndicePonto(Ponto4D ponto)
+        {
+          return pontosLista.IndexOf(ponto);
+        }
         
         public int RemoverPonto(Ponto4D ponto)
         {
@@ -69,7 +77,7 @@ namespace gcgcg
 
             return indice;
         }
-        
+
         protected override void DesenharObjeto()
         {
             GL.Begin(PrimitivaTipo);

@@ -53,25 +53,13 @@ namespace gcgcg
     protected override void OnLoad(EventArgs e)
     {
       base.OnLoad(e);
-      camera.xmin = -600; camera.xmax = 600; camera.ymin = -600; camera.ymax = 600;
+      camera.xmin = 0; camera.xmax = 600; camera.ymin = 0; camera.ymax = 600;
 
       Console.WriteLine(" --- Ajuda / Teclas: ");
       Console.WriteLine(" [  H     ] mostra teclas usadas. ");
 
-      var pt0 = new Ponto4D(-332, 392);
-      var pt1 = new Ponto4D(172, 398);
-      var pt2 = new Ponto4D(298, -196);
-      var pt3 = new Ponto4D(-510, -204);
-      
       objetoId = Utilitario.charProximo(objetoId);
-      var poli = new Poligono(objetoId, null, pt0);
-      poli.AdicionarPonto(pt1);
-      poli.AdicionarPonto(pt2);
-      poli.AdicionarPonto(pt3);
 
-      objetoSelecionado = poli;
-      objetosLista.Add(poli);
-      
 #if CG_Privado
       objetoId = Utilitario.charProximo(objetoId);
       obj_SegReta = new Privado_SegReta(objetoId, null, new Ponto4D(50, 150), new Ponto4D(150, 250));
@@ -102,9 +90,7 @@ namespace gcgcg
       GL.Clear(ClearBufferMask.ColorBufferBit);
       GL.MatrixMode(MatrixMode.Modelview);
       GL.LoadIdentity();
-#if CG_Gizmo      
-      Sru3D();
-#endif
+      
       for (var i = 0; i < objetosLista.Count; i++)
         objetosLista[i].Desenhar();
       if (bBoxDesenhar && (objetoSelecionado != null))
@@ -131,6 +117,30 @@ namespace gcgcg
         case Key.D:
           RemoverPontoMaisProximo();
           break;
+
+        case Key.R:
+        {
+          objetoSelecionado.ObjetoCor.CorR = 255;
+          objetoSelecionado.ObjetoCor.CorG = 0;
+          objetoSelecionado.ObjetoCor.CorB = 0;
+        }
+        break;
+
+        case Key.G:
+        {
+          objetoSelecionado.ObjetoCor.CorR = 0;
+          objetoSelecionado.ObjetoCor.CorG = 255;
+          objetoSelecionado.ObjetoCor.CorB = 0;
+        }
+        break;
+
+        case Key.B:
+        {
+          objetoSelecionado.ObjetoCor.CorR = 0;
+          objetoSelecionado.ObjetoCor.CorG = 0;
+          objetoSelecionado.ObjetoCor.CorB = 255;
+        }
+        break;
       }
       
       base.OnKeyDown(e);
@@ -138,7 +148,7 @@ namespace gcgcg
 
     protected override void OnMouseMove(MouseMoveEventArgs e)
     {
-      coordenada = ObterPonto(e.X, e.Y);
+      coordenada = new Ponto4D(e.X, 600 - e.Y);
       
       if (objetoSelecionado != null && (criandoNovo || movendo))
       {
@@ -157,12 +167,13 @@ namespace gcgcg
       base.OnMouseDown(e);
     }
     
-    private Ponto4D ObterPonto(int x, int y) => new ((x - 300) * 2, (y - 300) * -2);
-
     private void NovoPonto()
     {
-      if (objetoSelecionado == null)
+      if (!criandoNovo)
       {
+        indiceMovendo = -1;
+        movendo = false;
+
         NovoPoligono();
       }
       else
@@ -215,18 +226,13 @@ namespace gcgcg
       
       var poligono = (Poligono)objetoSelecionado;
 
-      if (movendo)
+      if (!movendo)
       {
-        poligono.FinalizarPrevisao(indiceMovendo);  
-      }
-      else
-      {
-        poligono.FinalizarPrevisao();  
+        poligono.FinalizarPrevisao();
       }
 
       RemoverPoligonoInvalido(poligono);
 
-      objetoSelecionado = null;
       criandoNovo = false;
       movendo = false;
       indiceMovendo = -1;
@@ -240,7 +246,7 @@ namespace gcgcg
       var maisProximo = ObterPontoMaisProximo();
       
       var poligono = (Poligono)objetoSelecionado;
-      indiceMovendo = poligono.RemoverPonto(maisProximo);
+      indiceMovendo = poligono.IndicePonto(maisProximo);
 
       movendo = true;
     }
@@ -266,7 +272,7 @@ namespace gcgcg
       var poligono = (Poligono)objetoSelecionado;
       var pontos = poligono.Pontos;
       
-      return pontos.MinBy(p => Math.Pow(p.X - coordenada.X, 2 + Math.Pow(p.Y - coordenada.Y, 2)));
+      return pontos.MinBy(p => Math.Pow(p.X - coordenada.X, 2) + Math.Pow(p.Y - coordenada.Y, 2));
     }
 
     private void RemoverPoligonoInvalido(Poligono poligono)
@@ -278,23 +284,6 @@ namespace gcgcg
       }
     }
     
-#if CG_Gizmo
-    private void Sru3D()
-    {
-      GL.LineWidth(5);
-      GL.Begin(PrimitiveType.Lines);
-      // GL.Color3(1.0f,0.0f,0.0f);
-      GL.Color3(Convert.ToByte(255), Convert.ToByte(0), Convert.ToByte(0));
-      GL.Vertex3(0, 0, 0); GL.Vertex3(200, 0, 0);
-      // GL.Color3(0.0f,1.0f,0.0f);
-      GL.Color3(Convert.ToByte(0), Convert.ToByte(255), Convert.ToByte(0));
-      GL.Vertex3(0, 0, 0); GL.Vertex3(0, 200, 0);
-      // GL.Color3(0.0f,0.0f,1.0f);
-      GL.Color3(Convert.ToByte(0), Convert.ToByte(0), Convert.ToByte(255));
-      GL.Vertex3(0, 0, 0); GL.Vertex3(0, 0, 200);
-      GL.End();
-    }
-#endif    
   }
   class Program
   {
