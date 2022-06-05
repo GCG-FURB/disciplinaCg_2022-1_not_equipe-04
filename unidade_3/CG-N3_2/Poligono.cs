@@ -6,9 +6,11 @@ namespace gcgcg
     internal class Poligono : ObjetoGeometria
     {
         private bool emPrevisao;
+        private bool emPrevisaoMovendo;
 
         public int QuantidadePontos => pontosLista.Count;
-        
+        public Ponto4D[] Pontos => pontosLista.ToArray();
+
         public Poligono(char rotulo, Objeto paiRef, Ponto4D pontoInicial) : base(rotulo, paiRef)
         {
             PontosAdicionar(pontoInicial);
@@ -27,17 +29,45 @@ namespace gcgcg
             PontosAdicionar(ponto);
             emPrevisao = true;
         }
+        
+        public void PreverPonto(Ponto4D ponto, int indice)
+        {
+            PontosAlterar(ponto, indice);
+            emPrevisaoMovendo = true;
+        }
 
         public void FinalizarPrevisao()
         {
             if (emPrevisao)
                 PontosRemoverUltimo();
         }
-
+        
+        public void FinalizarPrevisao(int indice)
+        {
+            if (emPrevisaoMovendo)
+            {
+                pontosLista.RemoveAt(indice);
+                emPrevisaoMovendo = false;    
+            }
+        }
+        
         public void AdicionarPonto(Ponto4D ponto)
         {
             PontosAdicionar(ponto);
             emPrevisao = false;
+        }
+
+        public void AlterarPonto(Ponto4D ponto, int indice)
+        {
+            PontosAlterar(ponto, indice);
+        }
+        
+        public int RemoverPonto(Ponto4D ponto)
+        {
+            var indice = pontosLista.IndexOf(ponto);
+            pontosLista.RemoveAt(indice);
+
+            return indice;
         }
         
         protected override void DesenharObjeto()
