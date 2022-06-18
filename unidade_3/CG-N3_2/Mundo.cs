@@ -33,6 +33,7 @@ namespace gcgcg
     private CameraOrtho camera = new CameraOrtho();
     protected List<Objeto> objetosLista = new List<Objeto>();
     private ObjetoGeometria objetoSelecionado = null;
+    private ObjetoGeometria objetoDesenhando = null;
     private char objetoId = '@';
     private bool bBoxDesenhar = false;
     int mouseX, mouseY;   //TODO: achar método MouseDown para não ter variável Global
@@ -119,38 +120,79 @@ namespace gcgcg
           break;
 
         case Key.R:
-        {
-          objetoSelecionado.ObjetoCor.CorR = 255;
-          objetoSelecionado.ObjetoCor.CorG = 0;
-          objetoSelecionado.ObjetoCor.CorB = 0;
-        }
-        break;
+          MudarCor('r');
+          break;
 
         case Key.G:
-        {
-          objetoSelecionado.ObjetoCor.CorR = 0;
-          objetoSelecionado.ObjetoCor.CorG = 255;
-          objetoSelecionado.ObjetoCor.CorB = 0;
-        }
-        break;
+          MudarCor('g');
+          break;
 
         case Key.B:
-        {
-          objetoSelecionado.ObjetoCor.CorR = 0;
-          objetoSelecionado.ObjetoCor.CorG = 0;
-          objetoSelecionado.ObjetoCor.CorB = 255;
-        }
-        break;
+          MudarCor('b');
+          break;
 
         case Key.C:
-        {
-          objetosLista.Remove(objetoSelecionado);
-          objetoSelecionado = null;
-        }
-        break;
+          RemoverPoligono();
+          break;
 
         case Key.S:
           objetoSelecionado.PrimitivaTipo = objetoSelecionado.PrimitivaTipo == PrimitiveType.LineLoop ? PrimitiveType.LineStrip : PrimitiveType.LineLoop;
+          break;
+
+        case Key.O:
+            bBoxDesenhar = !bBoxDesenhar;
+            break;
+
+        case Key.Up:
+          objetoSelecionado?.Translacao(0, 10, 0);
+          break;
+
+        case Key.Down:
+          objetoSelecionado?.Translacao(0, -10, 0);
+          break;
+
+        case Key.Right:
+          objetoSelecionado?.Translacao(10, 0, 0);
+          break;
+
+        case Key.Left:
+          objetoSelecionado?.Translacao(-10, 0, 0);
+          break;
+
+        case Key.Number1:
+          objetoSelecionado?.RotacaoGlobal(10, 'z');
+          break;
+
+        case Key.Number2:
+          objetoSelecionado?.RotacaoGlobal(-10, 'z');
+          break;
+
+        case Key.Number3:
+          objetoSelecionado?.RotacaoLocal(10);
+          break;
+
+        case Key.Number4:
+          objetoSelecionado?.RotacaoLocal(-10);
+          break;
+
+        case Key.PageUp:
+          objetoSelecionado?.EscalaGlobal(2, 2, 2);
+          break;
+
+        case Key.PageDown:
+          objetoSelecionado?.EscalaGlobal(0.5, 0.5, 0.5);
+          break;
+
+        case Key.Home:
+          objetoSelecionado?.EscalaLocal(2, 2, 2);
+          break;
+
+        case Key.End:
+          objetoSelecionado?.EscalaLocal(0.5, 0.5, 0.5);
+          break;
+
+        case Key.A:
+          SelecionaPoligono();
           break;
       }
       
@@ -161,7 +203,7 @@ namespace gcgcg
     {
       coordenada = new Ponto4D(e.X, 600 - e.Y);
       
-      if (objetoSelecionado != null && (criandoNovo || movendo))
+      if (objetoDesenhando != null || objetoSelecionado != null && (criandoNovo || movendo))
       {
         PreverPoligono();
       }
@@ -196,7 +238,7 @@ namespace gcgcg
     private void NovoPoligono()
     {
       var poligono = new Poligono(Utilitario.charProximo(objetoId), null, coordenada);
-      objetoSelecionado = poligono;
+      objetoDesenhando = poligono;
       objetosLista.Add(poligono);
 
       criandoNovo = true;
@@ -204,45 +246,54 @@ namespace gcgcg
 
     private void PreverPoligono()
     {
-      var poligono = (Poligono)objetoSelecionado;
-
       if (movendo)
       {
+        var poligono = (Poligono)objetoSelecionado;
         poligono.PreverPonto(coordenada, indiceMovendo);
       }
       else
       {
-        poligono.PreverPonto(coordenada);  
+        var poligono = (Poligono)objetoDesenhando;
+        poligono.PreverPonto(coordenada);
       }
     }
     
     private void AtualizarPoligono()
     {
-      var poligono = (Poligono)objetoSelecionado;
-
       if (movendo)
       {
+        var poligono = (Poligono)objetoSelecionado;
         poligono.AlterarPonto(coordenada, indiceMovendo);
       }
       else
       {
+        var poligono = (Poligono)objetoDesenhando;
         poligono.AdicionarPonto(coordenada);
       }
     }
     
     private void SalvarPoligono()
     {
-      if (objetoSelecionado == null)
+      if (objetoDesenhando == null && objetoSelecionado == null)
         return;
       
-      var poligono = (Poligono)objetoSelecionado;
-
       if (!movendo)
       {
+        var poligono = (Poligono)objetoDesenhando;
         poligono.FinalizarPrevisao();
-      }
 
-      RemoverPoligonoInvalido(poligono);
+        if (!RemoverPoligonoInvalido(poligono))
+        {
+          if (objetoSelecionado != null)
+          {
+            objetoSelecionado.FilhoAdicionar(objetoDesenhando);
+            objetosLista.Remove(objetoDesenhando);
+          }
+
+          objetoSelecionado = objetoDesenhando;
+          objetoDesenhando = null;
+        }
+      }
 
       criandoNovo = false;
       movendo = false;
@@ -286,13 +337,67 @@ namespace gcgcg
       return pontos.MinBy(p => Math.Pow(p.X - coordenada.X, 2) + Math.Pow(p.Y - coordenada.Y, 2));
     }
 
-    private void RemoverPoligonoInvalido(Poligono poligono)
+    private bool RemoverPoligonoInvalido(Poligono poligono)
     {
       if (poligono.QuantidadePontos < 2)
       {
         objetosLista.Remove(poligono);
         objetoSelecionado = null;
+        return true;
       }
+
+      return false;
+    }
+
+    private void MudarCor(char faixa)
+    {
+      if (objetoSelecionado == null)
+        return;
+
+      objetoSelecionado.ObjetoCor.CorR = 0;
+      objetoSelecionado.ObjetoCor.CorG = 0;
+      objetoSelecionado.ObjetoCor.CorB = 0;
+
+      switch(faixa)
+      {
+        case 'r':
+          objetoSelecionado.ObjetoCor.CorR = 255;
+          break;
+
+        case 'g':
+          objetoSelecionado.ObjetoCor.CorG = 255;
+          break;
+
+        case 'b':
+          objetoSelecionado.ObjetoCor.CorB = 255;
+          break;
+      }
+    }
+
+    private void SelecionaPoligono()
+    {
+      foreach (var poligono in objetosLista)
+      {
+        var pol = (Poligono)poligono;
+        objetoSelecionado = pol.ScanLine(coordenada);
+
+        if (objetoSelecionado != null)
+          break;
+      }
+    }
+
+    private void RemoverPoligono()
+    {
+      if (!objetosLista.Remove(objetoSelecionado))
+      {
+        foreach (var poligono in objetosLista)
+        {
+          if (((Poligono)poligono).RemoveFilho((Poligono)objetoSelecionado))
+            break;
+        }
+      }
+
+      objetoSelecionado = null;
     }
     
   }

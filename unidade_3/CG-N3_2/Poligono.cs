@@ -78,6 +78,53 @@ namespace gcgcg
             return indice;
         }
 
+        public Poligono ScanLine(Ponto4D coordenada)
+        {
+          int indice = 1;
+          int scanLineCount = 0;
+
+          foreach (var pto in pontosLista)
+          {
+            var ti = Matematica.ScanLineInterseccao(coordenada.Y, pto.Y, pontosLista[indice].Y);
+            if (ti >= 0 && ti <= 1)
+            {
+              var xi = Matematica.ScanLineCalculaXi(pto.X, pontosLista[indice].X, ti);
+              if (xi > coordenada.X)
+                scanLineCount++;
+            }
+
+            indice++;
+            if (indice == pontosLista.Count)
+              indice = 0;
+          }
+
+          if (scanLineCount % 2 > 0)
+            return this;
+
+          foreach (var filho in ObjetosLista)
+          {
+            var scanFilho = ((Poligono)filho).ScanLine(coordenada);
+            if (scanFilho != null)
+              return scanFilho;
+          }
+
+          return null;
+        }
+
+        public bool RemoveFilho(Poligono filhoRemover)
+        {
+          if (ObjetosLista.Remove(filhoRemover))
+            return true;
+
+          foreach (var filho in ObjetosLista)
+          {
+            if (((Poligono)filho).RemoveFilho(filhoRemover))
+              return true;
+          }
+
+          return false;
+        }
+
         protected override void DesenharObjeto()
         {
             GL.Begin(PrimitivaTipo);
