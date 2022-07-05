@@ -1,4 +1,4 @@
-﻿/**
+/**
   Autor: Dalton Solano dos Reis
 **/
 
@@ -56,6 +56,8 @@ namespace gcgcg
     {
       base.OnLoad(e);
       camera.xmin = 0; camera.xmax = 600; camera.ymin = 0; camera.ymax = 600;
+
+      GL.Enable(EnableCap.Texture2D);
 
       objetoId = Utilitario.charProximo(objetoId);
 
